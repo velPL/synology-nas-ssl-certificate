@@ -155,15 +155,21 @@ fi
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 source "${SCRIPT_DIR}/account.conf"
+ACME_SH="${SCRIPT_DIR}/acme.sh"
+
+if [[ ! -x "${ACME_SH}" ]]; then
+    echo "Error: Cannot execute ${ACME_SH}" >&2
+    exit 1
+fi
 
 # Register account in ZeroSSL
-./acme.sh --register-account -m ${ZEROSSL_EMAIL}
+"${ACME_SH}" --register-account -m "${ZEROSSL_EMAIL}"
 
 # Generate ZeroSSL certificate
-./acme.sh --issue --dns dns_cf -d "${SYNOLOGY_DOMAIN_NAME}"
+"${ACME_SH}" --issue --dns dns_cf -d "${SYNOLOGY_DOMAIN_NAME}"
 
 # Install ZeroSSL certificate
-./acme.sh -d "${SYNOLOGY_DOMAIN_NAME}" --deploy --deploy-hook synology_dsm 
+"${ACME_SH}" -d "${SYNOLOGY_DOMAIN_NAME}" --deploy --deploy-hook synology_dsm 
 EOF
 chmod u+x "${ACME_SCRIPT_INSTALL_DIR}/generate-certificate.bash"
 
@@ -178,9 +184,15 @@ fi
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 source "${SCRIPT_DIR}/account.conf"
+ACME_SH="${SCRIPT_DIR}/acme.sh"
+
+if [[ ! -x "${ACME_SH}" ]]; then
+    echo "Error: Cannot execute ${ACME_SH}" >&2
+    exit 1
+fi
 
 # Renew certificate
-./acme.sh --renew -d  "${SYNOLOGY_DOMAIN_NAME}"
+"${ACME_SH}" --renew -d "${SYNOLOGY_DOMAIN_NAME}"
 EOF
 chmod u+x "${ACME_SCRIPT_INSTALL_DIR}/renew-certificate.bash"
 chown -R "${SYNOLOGY_NAS_USER}" "${ACME_SCRIPT_INSTALL_DIR}"
