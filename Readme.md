@@ -1,6 +1,6 @@
 # Synology NAS free SSL certificate installer for CloudFlare DNS provider for devices that are not exposed to the internet
 
-## Version 0.1.0 (initial release, breaking changes to be expected ‼️)
+## This project is in a very early pre-stable state (breaking changes can happen ‼️)
 
 This project allows you to streamline a process of obtaining a free ZeroSSL certificate for your Synology NAS without a need to expose your device to the internet. It utilizes [acme.sh official script](https://github.com/acmesh-official/acme.sh) together with a DNS challenge for domain ownership verification, which is currently not supported by Synology's DSM 7 (at least in version 7.3.2-86009).
 
