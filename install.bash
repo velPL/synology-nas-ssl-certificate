@@ -1,25 +1,24 @@
 #!/bin/bash
 
-<<comment
+: '
     Automated acme.sh provisioning for Synology NAS with ZeroSSL free certificate generation using DNS challenge via CloudFlare domain provider
     Version: 0.1.0
-comment
+'
 
 # Variables
 ZEROSSL_HELP_URL='https://help.zerossl.com/hc/en-us/articles/360060120053-Troubleshooting-Email-Verification'
 ACME_SCRIPT_DEFAULT_INSTALL_DIR='/usr/local/share/acme.sh'
 ACME_SCRIPT_DOWNLOAD_URL_TEMPLATE='https://github.com/acmesh-official/acme.sh/archive/refs/heads/master.zip'
 CERTIFICATE_CONFIG_FILE=account.conf
-SYNOLOGY_CERTIFICATE_PATH='/var/services/homes/certificate/.acme.sh'
 TEMP_DIR='/tmp'
 UNZIP_COMMAND='7zz'
 
 # Functions
 print_error() {
-  echo "\033[0;31m❌ An error occurred: \033[0m$1"
+  printf "\033[0;31m❌ An error occurred: \033[0m%s" "$1"
 }
 print_success() {
-  echo "\033[0;32m✅ Success: \033[0m$1"
+  printf "\033[0;32m✅ Success: \033[0m%s" "$1"
 }
 
 # Pre-checks
@@ -41,12 +40,12 @@ if [ ! -w "${TEMP_DIR}" ]; then
 fi
 
 # Gather user inputs for installation
-read -p "Where to install acme.sh (leave empty for default ${ACME_SCRIPT_DEFAULT_INSTALL_DIR})?: " ACME_SCRIPT_INSTALL_DIR
+read -rp "Where to install acme.sh (leave empty for default ${ACME_SCRIPT_DEFAULT_INSTALL_DIR})?: " ACME_SCRIPT_INSTALL_DIR
 if [ -z "${ACME_SCRIPT_INSTALL_DIR}" ]
 then
     ACME_SCRIPT_INSTALL_DIR="${ACME_SCRIPT_DEFAULT_INSTALL_DIR}"
 fi
-ACME_SCRIPT_INSTALL_DIR=$(realpath ${ACME_SCRIPT_INSTALL_DIR})
+ACME_SCRIPT_INSTALL_DIR=$(realpath "${ACME_SCRIPT_INSTALL_DIR}")
 ACME_SCRIPT_INSTALL_DIR="${ACME_SCRIPT_INSTALL_DIR%/}"
 if [[ -d ${ACME_SCRIPT_INSTALL_DIR} && -f "${ACME_SCRIPT_INSTALL_DIR}/${CERTIFICATE_CONFIG_FILE}" ]]
 then
@@ -55,7 +54,7 @@ then
 fi
 
 
-read -p "Enter version numer of acme.sh you want to install (empty means latest master): " ACME_INSTALL_VERSION
+read -rp "Enter version numer of acme.sh you want to install (empty means latest master): " ACME_INSTALL_VERSION
 if [ ! -z "${ACME_INSTALL_VERSION}" ]
 then
     ACME_SCRIPT_DOWNLOAD_URL_TEMPLATE="https://github.com/acmesh-official/acme.sh/archive/refs/tags/${ACME_INSTALL_VERSION}.zip"
@@ -95,19 +94,19 @@ else
 fi
 
 # Gather user inputs for configuration
-echo "\n⏳ Provide required DSM and CloudFlare data so we can create a configuration file for you \n"
+printf "\n⏳ Provide required DSM and CloudFlare data so we can create a configuration file for you \n"
 
-read -p "Domain name you want to use with your Synology NAS: " SYNOLOGY_DOMAIN_NAME
-read -p "E-mail address (required by ZeroSSL ${ZEROSSL_HELP_URL}): " ZEROSSL_EMAIL
-read -p "Dedicated administrator user on NAS (required to be in groups http and administrators ‼️): " SYNOLOGY_NAS_USER
-read -s -p "Password for user ${USER} to your NAS: " SYNOLOGY_NAS_PASSWORD
+read -rp "Domain name you want to use with your Synology NAS: " SYNOLOGY_DOMAIN_NAME
+read -rp "E-mail address (required by ZeroSSL ${ZEROSSL_HELP_URL}): " ZEROSSL_EMAIL
+read -rp "Dedicated administrator user on NAS (required to be in groups http and administrators ‼️): " SYNOLOGY_NAS_USER
+read -s -rp "Password for user ${USER} to your NAS: " SYNOLOGY_NAS_PASSWORD
 printf "\n"
-read -p "Http port of your DSM (leave empty for default 5000): " SYNOLOGY_NAS_DSM_HTTP_PORT
-read -p "Your CloudFlare's API token: " CERTIFICATE_CLOUDFLARE_TOKEN
-read -p "Your CloudFlare's domain zone identifier: " CERTIFICATE_CLOUDFLARE_ZONE_ID
-read -p "Your CloudFlare's account ID: " CERTIFICATE_CLOUDFLARE_TOKEN_ACCOUNT_ID
+read -rp "Http port of your DSM (leave empty for default 5000): " SYNOLOGY_NAS_DSM_HTTP_PORT
+read -rp "Your CloudFlare's API token: " CERTIFICATE_CLOUDFLARE_TOKEN
+read -rp "Your CloudFlare's domain zone identifier: " CERTIFICATE_CLOUDFLARE_ZONE_ID
+read -rp "Your CloudFlare's account ID: " CERTIFICATE_CLOUDFLARE_TOKEN_ACCOUNT_ID
 
-if [ -z ${SYNOLOGY_NAS_DSM_HTTP_PORT} ]; then
+if [ -z "${SYNOLOGY_NAS_DSM_HTTP_PORT}" ]; then
     SYNOLOGY_NAS_DSM_HTTP_PORT=5000
 fi
 
@@ -122,7 +121,7 @@ if [ -z "$SYNOLOGY_DOMAIN_NAME" ] || \
     exit 1
 fi
 
-cat << EOF > ${ACME_SCRIPT_INSTALL_DIR}/${CERTIFICATE_CONFIG_FILE}
+cat << EOF > "${ACME_SCRIPT_INSTALL_DIR}/${CERTIFICATE_CONFIG_FILE}"
 # Synology DSM configuration
 export SYNO_USERNAME="${SYNOLOGY_NAS_USER}"
 export SYNO_PASSWORD="${SYNOLOGY_NAS_PASSWORD}"
@@ -198,4 +197,4 @@ chmod u+x "${ACME_SCRIPT_INSTALL_DIR}/renew-certificate.bash"
 chown -R "${SYNOLOGY_NAS_USER}" "${ACME_SCRIPT_INSTALL_DIR}"
 
 print_success "Certificate generation and renewal script have been created in ${ACME_SCRIPT_INSTALL_DIR}"
-echo "\nAll done here 🎉. Go to ${ACME_SCRIPT_INSTALL_DIR} and run ./generate-certificate.bash\n"
+printf "\nAll done here 🎉. Go to %s and run ./generate-certificate.bash\n" "${ACME_SCRIPT_INSTALL_DIR}"
