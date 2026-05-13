@@ -30,7 +30,7 @@ synology_options() {
     read -rp "Domain name you want to use with your Synology NAS: " SYNOLOGY_DOMAIN_NAME
     read -rp "E-mail address (required by ZeroSSL ${ZEROSSL_HELP_URL}): " ZEROSSL_EMAIL
     read -rp "Dedicated administrator user on NAS (required to be in groups http and administrators ‼️): " SYNOLOGY_NAS_USER
-    read -s -rp "Password for user ${USER} to your NAS: " SYNOLOGY_NAS_PASSWORD
+    read -s -rp "Password for user ${SYNOLOGY_NAS_USER} to your NAS: " SYNOLOGY_NAS_PASSWORD
     printf "\n"
     read -rp "Http port of your DSM (leave empty for default 5000): " SYNOLOGY_NAS_DSM_HTTP_PORT
 }
@@ -59,77 +59,77 @@ dns_options_Cloudflare() {
     fi
 
 cat << EOF > "${ACME_SCRIPT_INSTALL_DIR}"/"${CERTIFICATE_CONFIG_FILE}"
-    # Synology DSM configuration
-    export SYNO_USERNAME="${SYNOLOGY_NAS_USER}"
-    export SYNO_PASSWORD="${SYNOLOGY_NAS_PASSWORD}"
-    export SYNO_CERTIFICATE="ZeroSSL free"
-    export SYNO_CREATE=1
-    export SYNO_HOSTNAME="localhost"
-    export SYNO_PORT="${SYNOLOGY_NAS_DSM_HTTP_PORT}"
-    export SYNO_SCHEME="http"
+# Synology DSM configuration
+export SYNO_USERNAME="${SYNOLOGY_NAS_USER}"
+export SYNO_PASSWORD="${SYNOLOGY_NAS_PASSWORD}"
+export SYNO_CERTIFICATE="ZeroSSL free"
+export SYNO_CREATE=1
+export SYNO_HOSTNAME="localhost"
+export SYNO_PORT="${SYNOLOGY_NAS_DSM_HTTP_PORT}"
+export SYNO_SCHEME="http"
 
-    # CloudFlare configuration
-    export CF_Token="${CERTIFICATE_CLOUDFLARE_TOKEN}"
-    export CF_Zone_ID="${CERTIFICATE_CLOUDFLARE_ZONE_ID}"
-    export CF_Account_ID="${CERTIFICATE_CLOUDFLARE_TOKEN_ACCOUNT_ID}"
+# CloudFlare configuration
+export CF_Token="${CERTIFICATE_CLOUDFLARE_TOKEN}"
+export CF_Zone_ID="${CERTIFICATE_CLOUDFLARE_ZONE_ID}"
+export CF_Account_ID="${CERTIFICATE_CLOUDFLARE_TOKEN_ACCOUNT_ID}"
 
-    # ZeroSSL configuration
-    export ZEROSSL_EMAIL="${ZEROSSL_EMAIL}"
-    export SYNOLOGY_DOMAIN_NAME="${SYNOLOGY_DOMAIN_NAME}"
+# ZeroSSL configuration
+export ZEROSSL_EMAIL="${ZEROSSL_EMAIL}"
+export SYNOLOGY_DOMAIN_NAME="${SYNOLOGY_DOMAIN_NAME}"
 EOF
 
     print_success "Configuration file has been created for you in ${ACME_SCRIPT_INSTALL_DIR}/${CERTIFICATE_CONFIG_FILE}."
 
 cat << 'EOF' > "${ACME_SCRIPT_INSTALL_DIR}/generate-certificate.bash"
-    #!/bin/bash
+#!/bin/bash
 
-    if [[ $EUID -eq 0 ]]; then
-        echo "Error: This script should NOT be run as root (or with sudo)." >&2
-        echo "Run it as a ${SYNO_USERNAME} user instead." >&2
-        exit 1
-    fi
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+source "${SCRIPT_DIR}/account.conf"
+if [[ $EUID -eq 0 ]]; then
+    echo "Error: This script should NOT be run as root (or with sudo)." >&2
+    echo "Run it as a ${SYNO_USERNAME} user instead." >&2
+    exit 1
+fi
 
-    SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-    source "${SCRIPT_DIR}/account.conf"
-    ACME_SH="${SCRIPT_DIR}/acme.sh"
+ACME_SH="${SCRIPT_DIR}/acme.sh"
 
-    if [[ ! -x "${ACME_SH}" ]]; then
-        echo "Error: Cannot execute ${ACME_SH}" >&2
-        exit 1
-    fi
+if [[ ! -x "${ACME_SH}" ]]; then
+    echo "Error: Cannot execute ${ACME_SH}" >&2
+    exit 1
+fi
 
-    # Register account in ZeroSSL
-    "${ACME_SH}" --register-account -m "${ZEROSSL_EMAIL}"
+# Register account in ZeroSSL
+"${ACME_SH}" --register-account -m "${ZEROSSL_EMAIL}"
 
-    # Generate ZeroSSL certificate
-    "${ACME_SH}" --issue --dns dns_cf -d "${SYNOLOGY_DOMAIN_NAME}"
+# Generate ZeroSSL certificate
+"${ACME_SH}" --issue --dns dns_cf -d "${SYNOLOGY_DOMAIN_NAME}"
 
-    # Install ZeroSSL certificate
-    "${ACME_SH}" -d "${SYNOLOGY_DOMAIN_NAME}" --deploy --deploy-hook synology_dsm 
+# Install ZeroSSL certificate
+"${ACME_SH}" -d "${SYNOLOGY_DOMAIN_NAME}" --deploy --deploy-hook synology_dsm 
 EOF
 
     chmod u+x "${ACME_SCRIPT_INSTALL_DIR}/generate-certificate.bash"
 
 cat << 'EOF' > "${ACME_SCRIPT_INSTALL_DIR}/renew-certificate.bash"
-    #!/bin/bash
+#!/bin/bash
 
-    if [[ $EUID -eq 0 ]]; then
-        echo "Error: This script should NOT be run as root (or with sudo)." >&2
-        echo "Run it as a ${SYNOLOGY_NAS_USER} user instead." >&2
-        exit 1
-    fi
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+source "${SCRIPT_DIR}/account.conf"
+if [[ $EUID -eq 0 ]]; then
+    echo "Error: This script should NOT be run as root (or with sudo)." >&2
+    echo "Run it as a ${SYNO_USERNAME} user instead." >&2
+    exit 1
+fi
 
-    SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-    source "${SCRIPT_DIR}/account.conf"
-    ACME_SH="${SCRIPT_DIR}/acme.sh"
+ACME_SH="${SCRIPT_DIR}/acme.sh"
 
-    if [[ ! -x "${ACME_SH}" ]]; then
-        echo "Error: Cannot execute ${ACME_SH}" >&2
-        exit 1
-    fi
+if [[ ! -x "${ACME_SH}" ]]; then
+    echo "Error: Cannot execute ${ACME_SH}" >&2
+    exit 1
+fi
 
-    # Renew certificate
-    "${ACME_SH}" --renew -d "${SYNOLOGY_DOMAIN_NAME}"
+# Renew certificate
+"${ACME_SH}" --renew -d "${SYNOLOGY_DOMAIN_NAME}"
 EOF
 
 }
@@ -156,14 +156,14 @@ pick_menu() {
     trap '_cleanup; return 1' INT TERM
  
     while true; do
-        printf '\033[u' 
+        printf '\033[u\n\n' 
 
         # Header
         printf "\033[1m  Select your DNS provider\033[0m\n"
         printf "  \033[2m(↑↓ navigate, Enter confirm, q quit)\033[0m\n"
  
         for (( i=0; i<count; i++ )); do
-            local label="${items[$i]%.dns.conf}"
+            local label="${items[$i]}"
             if (( i == idx )); then
                 printf "  \033[1;36m▶ %s\033[0m\n" "${label}"
             else
@@ -188,7 +188,7 @@ pick_menu() {
                 _cleanup
                 trap - INT TERM
                 printf '\033[?25h'
-                SELECTED_PROVIDER="${items[$idx]%.dns.conf}"
+                SELECTED_PROVIDER="${items[$idx]}"
                 return 0 ;;
             q|Q)
                 _cleanup
