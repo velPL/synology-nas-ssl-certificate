@@ -1,10 +1,17 @@
-# Synology NAS free SSL certificate installer for CloudFlare DNS provider for devices that are not exposed to the internet
+# Synology NAS free SSL certificate installer for multiple DNS providers for devices that are not exposed to the internet
 
-## This project is in a very early pre-stable state (breaking changes can happen ‼️)
+## This is an early state project (breaking changes possible ‼️)
 
-This project allows you to streamline a process of obtaining a free ZeroSSL certificate for your Synology NAS without a need to expose your device to the internet. It utilizes [acme.sh official script](https://github.com/acmesh-official/acme.sh) together with a DNS challenge for domain ownership verification, which is currently not supported by Synology's DSM 7 (at least in version 7.3.2-86009).
+## What's this?
+
+This project allows you to streamline a process of obtaining a free ZeroSSL certificate for your Synology NAS without a need to expose your device to the internet in any way on any port. It utilizes [acme.sh official script](https://github.com/acmesh-official/acme.sh) together with a DNS challenge for domain ownership verification, which is currently not supported by Synology's DSM 7 (at least in version 7.3.2-86009).
 
 >‼️ Before running the installation script as root, which is required, ensure you read the script and understand fully what it is doing (asking your AI model of choice for help is also a good idea) - you should NEVER blindly run any scripts straight from internet, especially as root user ‼️
+
+## Supported DNS providers
+- CloudFlare
+
+... more to come - pull requests for other providers are very welcome 🥳
 
 ## Prerequisites
 
@@ -34,3 +41,11 @@ In order to be able to successfully install certificate helper scripts you need 
 ## Post-installation steps
 
 1. You can turn off SSH server afterwards as no longer needed
+
+
+## Pull requests for other DNS providers guide
+
+- add a DNS provider name to DNS_PROVIDERS array (line 25)
+- create a function after line 40 and before pick_menu() function definition under name dns_options_XXX (where XXX is provider name you gave in previous step)
+- implement this function - take dns_options_Cloudflare() as a boilerplate to understand what 3 files need to be created
+- test it on your domain with that provider and attach proof it works in the pull request
